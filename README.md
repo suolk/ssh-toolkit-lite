@@ -22,10 +22,16 @@
 
 ## 使用方法
 
-如果项目已经上传到 GitHub，可以先用 `wget` 下载完整源码包，再进入目录运行：
+一键安装脚本：
 
 ```bash
-wget -O SSH-Toolkit-Lite.tar.gz https://github.com/<owner>/SSH-Toolkit-Lite/archive/refs/heads/main.tar.gz
+wget -P /root -N --no-check-certificate "https://raw.githubusercontent.com/suolk/ssh-toolkit-lite/main/setup.sh" && chmod 700 /root/setup.sh && /root/setup.sh
+```
+
+下载整个项目源码包，再进入目录运行：
+
+```bash
+wget -O SSH-Toolkit-Lite.tar.gz https://github.com/suolk/ssh-toolkit-lite/archive/refs/heads/main.tar.gz
 tar -xzf SSH-Toolkit-Lite.tar.gz
 cd SSH-Toolkit-Lite-main
 bash Entrance.sh
