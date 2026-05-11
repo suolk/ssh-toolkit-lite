@@ -60,6 +60,7 @@ bash Entrance.sh
 3. 打开 API Tokens。
 4. 点击 Create Token 创建新 Token。
 5. 推荐直接使用 Edit zone DNS 模板，或为目标域名单独创建只允许 DNS 编辑的 Token。
+   ![image](image.png)
 6. 创建完成后，把 Token 复制出来，在脚本提示时粘贴输入。
 7. 注意Token只在第一次出现时显示，请务必妥善保存到本地。
 

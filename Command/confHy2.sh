@@ -17,8 +17,8 @@ getDomain() {
     # If domain exists, ask user if they want to keep it
     if [ -n "$domain" ]; then
         echo "Current domain: $domain"
-        read -r -p "Do you want to keep the current domain? (y/n) " answer
-        if ! [[ "$answer" =~ ^[Yy]$ ]]; then
+        read -r -p "Do you want to change the current domain? (y/n) " answer
+        if ! [[ "$answer" =~ ^[Nn]$ ]]; then
             domain=""
         fi
     fi
