@@ -78,7 +78,8 @@ deployVless() {
     "listen_port": 443,
     "users": [
         {
-            "uuid": "$uuid"
+            "uuid": "$uuid",
+            "flow": "xtls-rprx-vision"
         }
     ],
     "tls": {
@@ -89,7 +90,7 @@ deployVless() {
     }
 }
 EOF
-    local shareLink="vless://$uuid@$domain:443?encryption=none&security=tls&type=tcp&sni=$domain#VLESS-TLS"
+    local shareLink="vless://$uuid@$domain:443?encryption=none&security=tls&type=tcp&sni=$domain&flow=xtls-rprx-vision#VLESS-Vision"
     echo "$shareLink" > "$SHARE_LINK_PATH"
 }
 
