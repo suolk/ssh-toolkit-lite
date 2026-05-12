@@ -28,6 +28,12 @@ cat > "$CONFIG_PATH" <<EOF
   },
   "inbounds": [
 $inbounds_config
+  ],
+  "outbounds": [
+    {
+      "type": "direct",
+      "tag": "direct"
+    }
   ]
 }
 EOF
