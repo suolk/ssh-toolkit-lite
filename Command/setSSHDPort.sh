@@ -3,6 +3,49 @@ set -euo pipefail
 
 UFW_INIT_FLAG="/var/lib/ssh-toolkit-lite/ufw-default-ports.initialized"
 
+get_ssh_service_name() {
+    if systemctl list-unit-files | grep -q '^ssh\.service'; then
+        echo "ssh"
+    else
+        echo "sshd"
+    fi
+}
+
+change_ssh_port() {
+    local new_port
+    local ssh_config="/etc/ssh/sshd_config"
+    local ssh_service
+
+    read -r -p "Enter new SSH port (1024-65535): " new_port
+    if ! [[ "$new_port" =~ ^[0-9]+$ ]] || [ "$new_port" -lt 1024 ] || [ "$new_port" -gt 65535 ]; then
+        echo "Invalid port. Please enter a number between 1024 and 65535."
+        return 1
+    fi
+
+    echo "Allowing new SSH port $new_port/tcp in UFW first..."
+    sudo ufw allow "$new_port/tcp"
+
+    if grep -qE '^#?Port[[:space:]]+[0-9]+' "$ssh_config"; then
+        sudo sed -i "s/^#\?Port[[:space:]]\+[0-9]\+/Port $new_port/" "$ssh_config"
+    else
+        echo "Port $new_port" | sudo tee -a "$ssh_config" >/dev/null
+    fi
+
+    sudo sshd -t || {
+        echo "sshd config test failed. Reverting the port change is recommended." >&2
+        return 1
+    }
+
+    ssh_service=$(get_ssh_service_name)
+    sudo systemctl restart "$ssh_service" || {
+        echo "Failed to restart $ssh_service." >&2
+        return 1
+    }
+
+    echo "[OK] SSH port changed to $new_port."
+    echo "[INFO] Verify the new port works before deleting the old SSH rule."
+}
+
 echo "Checking for UFW (Uncomplicated Firewall)..."
 if command -v ufw >/dev/null 2>&1; then
     echo "UFW is already installed."
@@ -38,12 +81,13 @@ fi
 
 while true; do
     echo ""
-    echo "====== UFW Manager ======"
-    echo "1) Show status"
-    echo "2) Add rule"
-    echo "3) Delete rule"
+    echo "====== UFW / SSH Manager ======"
+    echo "1) Show UFW status"
+    echo "2) Add UFW rule"
+    echo "3) Delete UFW rule"
+    echo "4) Change SSH port"
     echo "0) Exit"
-    echo "========================"
+    echo "================================"
     
     read -p "Choose an option: " opt
 
@@ -62,6 +106,9 @@ while true; do
             read -p "Enter rule number(The num between [ ] ) to delete: " num
             sudo ufw delete "$num"
             sudo ufw status numbered
+            ;;
+        4)
+            change_ssh_port
             ;;
         0)
             exit 0
