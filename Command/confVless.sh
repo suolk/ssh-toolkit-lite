@@ -116,8 +116,7 @@ deployVless() {
   "users": [
     {
       "uuid": "$uuid",
-      "flow": "xtls-rprx-vision",
-      "name": "${uuid%%-*}-VLESS_TCP/TLS_Vision"
+      "name": "${uuid%%-*}-VLESS_TCP/TLS"
     }
   ],
   "tls": {
@@ -128,7 +127,7 @@ deployVless() {
   }
 }
 EOF
-    local shareLink="vless://${uuid}@${domain}:${newPort}?encryption=none&security=tls&type=tcp&host=${domain}&fp=chrome&headerType=none&sni=${domain}&flow=xtls-rprx-vision#${uuid%%-*}-VLESS_TCP/TLS_Vision"
+    local shareLink="vless://${uuid}@${domain}:${newPort}?encryption=none&security=tls&type=tcp&host=${domain}&fp=chrome&headerType=none&sni=${domain}#${uuid%%-*}-VLESS_TCP/TLS"
     echo "$shareLink" > "$SHARE_LINK_PATH"
 }
 
