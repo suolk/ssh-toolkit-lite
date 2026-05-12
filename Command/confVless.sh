@@ -4,6 +4,7 @@ set -euo pipefail
 CONFIG_DIR="/etc/sing-box/vless"
 CONFIG_PATH="$CONFIG_DIR/config.json"
 DOMAIN_PATH="$CONFIG_DIR/domain.txt"
+PORT_PATH="$CONFIG_DIR/port.txt"
 SHARE_LINK_PATH="$CONFIG_DIR/share_link.txt"
 ENCRYPT_DIR="/etc/encrypt"
 
@@ -24,6 +25,32 @@ validateDomainIp() {
         echo "Resolved IPv4: ${domain_ips:-none}" >&2
         return 1
     fi
+}
+
+getNewPort() {
+    local newPort
+    local port_in_use
+    newPort=$(cat "$PORT_PATH" 2>/dev/null || true)
+    port_in_use=$(ss -lnt | grep ":$newPort" || true)
+    while [ -z "${newPort:-}" ] || [ -n "$port_in_use" ]; do
+        newPort=$(shuf -i 1024-65535 -n 1)
+        port_in_use=$(ss -lnt | grep ":$newPort" || true)
+    done
+
+    echo "Generated random port: $newPort"
+    read -r -p "Do you want to change the random port? (y/n) " answer
+    if [[ "$answer" =~ ^[Yy]$ ]]; then
+        while true; do
+            read -r -p "Enter new port (1024-65535): " newPort
+            port_in_use=$(ss -lnt | grep ":$newPort" || true)
+            if [[ "$newPort" =~ ^[0-9]+$ ]] && [ "$newPort" -ge 1024 ] && [ "$newPort" -le 65535 ] && [ -z "$port_in_use" ]; then
+                break
+            else
+                echo "Invalid port. Please enter an unused number between 1024 and 65535."
+            fi
+        done
+    fi
+    echo "$newPort" > "$PORT_PATH"
 }
 
 mkdir -p "$CONFIG_DIR" || {
@@ -67,6 +94,8 @@ getDomain() {
 deployVless() {
     local domain
     domain=$(cat "$DOMAIN_PATH")
+    local newPort
+    newPort=$(cat "$PORT_PATH")
     local uuid
     uuid=$(uuidgen)
 
@@ -75,7 +104,7 @@ deployVless() {
     "type": "vless",
     "tag": "vless-in",
     "listen": "0.0.0.0",
-    "listen_port": 443,
+    "listen_port": $newPort,
     "users": [
         {
             "uuid": "$uuid",
@@ -90,9 +119,10 @@ deployVless() {
     }
 }
 EOF
-    local shareLink="vless://$uuid@$domain:443?encryption=none&security=tls&type=tcp&sni=$domain&flow=xtls-rprx-vision#VLESS-Vision"
+    local shareLink="vless://$uuid@$domain:$newPort?encryption=none&flow=xtls-rprx-vision&security=tls&sni=$domain&fp=chrome&insecure=0&allowInsecure=0&type=tcp&headerType=none&host=$domain#VLESS-Vision"
     echo "$shareLink" > "$SHARE_LINK_PATH"
 }
 
+getNewPort
 getDomain
 deployVless

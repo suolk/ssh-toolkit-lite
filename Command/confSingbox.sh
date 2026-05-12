@@ -4,6 +4,7 @@ HY2_PATH="$CONFIG_DIR/hysteria2/config.json"
 VLESS_PATH="$CONFIG_DIR/vless/config.json"
 SHARE_LINK_PATH="$CONFIG_DIR/share_link.txt"
 HY2_PORT_PATH="$CONFIG_DIR/hysteria2/port.txt"
+VLESS_PORT_PATH="$CONFIG_DIR/vless/port.txt"
 HY2_SHARE_LINK_PATH="$CONFIG_DIR/hysteria2/share_link.txt"
 VLESS_SHARE_LINK_PATH="$CONFIG_DIR/vless/share_link.txt"
 
@@ -77,6 +78,20 @@ if [ -s "$HY2_PORT_PATH" ]; then
         fi
     else
         echo "[INFO] ufw is not installed, skipped local firewall rule for UDP port $hy2_port."
+    fi
+fi
+
+if [ -s "$VLESS_PORT_PATH" ]; then
+    vless_port=$(cat "$VLESS_PORT_PATH")
+    if command -v ufw >/dev/null 2>&1; then
+        if ufw status | grep -q "Status: active"; then
+            ufw allow "$vless_port/tcp"
+            echo "[OK] Allowed VLESS TCP port $vless_port in ufw."
+        else
+            echo "[INFO] ufw is inactive, skipped local firewall rule for TCP port $vless_port."
+        fi
+    else
+        echo "[INFO] ufw is not installed, skipped local firewall rule for TCP port $vless_port."
     fi
 fi
 
