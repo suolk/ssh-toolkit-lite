@@ -9,14 +9,24 @@ VLESS_SHARE_LINK_PATH="$CONFIG_DIR/vless/share_link.txt"
 
 hy2_config=$(cat "$HY2_PATH" 2>/dev/null || true)
 vless_config=$(cat "$VLESS_PATH" 2>/dev/null || true)
+if [ -n "$hy2_config" ] && [ -n "$vless_config" ]; then
+    inbounds_config="        $hy2_config,
+        $vless_config"
+elif [ -n "$hy2_config" ]; then
+    inbounds_config="        $hy2_config"
+elif [ -n "$vless_config" ]; then
+    inbounds_config="        $vless_config"
+else
+    echo "[ERROR] No inbound config found." >&2
+    exit 1
+fi
 cat > "$CONFIG_PATH" <<EOF
 {
   "log": {
     "level": "info"
   },
   "inbounds": [
-        $hy2_config,
-        $vless_config
+$inbounds_config
   ],
   "outbounds": [
     {
@@ -56,10 +66,18 @@ fi
 systemctl restart sing-box
 echo "[OK] sing-box restarted with $CONFIG_PATH"
 
-if [ -s "$HY2_PORT_PATH" ] && command -v ufw >/dev/null 2>&1 && ufw status | grep -q "Status: active"; then
+if [ -s "$HY2_PORT_PATH" ]; then
     hy2_port=$(cat "$HY2_PORT_PATH")
-    ufw allow "$hy2_port/udp"
-    echo "[OK] Allowed Hysteria2 UDP port $hy2_port in ufw."
+    if command -v ufw >/dev/null 2>&1; then
+        if ufw status | grep -q "Status: active"; then
+            ufw allow "$hy2_port/udp"
+            echo "[OK] Allowed Hysteria2 UDP port $hy2_port in ufw."
+        else
+            echo "[INFO] ufw is inactive, skipped local firewall rule for UDP port $hy2_port."
+        fi
+    else
+        echo "[INFO] ufw is not installed, skipped local firewall rule for UDP port $hy2_port."
+    fi
 fi
 
 if [ -s "$HY2_SHARE_LINK_PATH" ]; then

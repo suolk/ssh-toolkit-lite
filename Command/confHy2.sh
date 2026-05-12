@@ -101,7 +101,7 @@ deployHysteria2() {
     }
 }
 EOF
-    local shareLink="hysteria2://${domain}:${newPort}?password=${password}&obfs=${password_obfs}#Hysteria2"
+    local shareLink="hysteria2://${password}@${domain}:${newPort}?sni=${domain}&alpn=h3&insecure=0&allowInsecure=0&obfs=salamander&obfs-password=${password_obfs}#Hysteria2"
     echo "$shareLink" > "$SHARE_LINK_PATH"
 }
 
