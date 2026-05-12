@@ -3,14 +3,6 @@ set -euo pipefail
 
 UFW_INIT_FLAG="/var/lib/ssh-toolkit-lite/ufw-default-ports.initialized"
 
-get_ssh_service_name() {
-    if systemctl list-unit-files | grep -q '^ssh\.service'; then
-        echo "ssh"
-    else
-        echo "sshd"
-    fi
-}
-
 change_ssh_port() {
     local new_port
     local ssh_config="/etc/ssh/sshd_config"
@@ -36,11 +28,8 @@ change_ssh_port() {
         return 1
     }
 
-    ssh_service=$(get_ssh_service_name)
-    sudo systemctl restart "$ssh_service" || {
-        echo "Failed to restart $ssh_service." >&2
-        return 1
-    }
+    sudo systemctl restart sshd ||  echo "Failed to restart sshd."
+    sudo systemctl restart ssh ||  echo "Failed to restart ssh." 
 
     echo "[OK] SSH port changed to $new_port."
     echo "[INFO] Verify the new port works before deleting the old SSH rule."
