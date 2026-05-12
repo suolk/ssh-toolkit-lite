@@ -138,13 +138,13 @@ while true; do
     3)
       bash Command/installSingbox.sh || echo "[ERROR] sing-box install failed" ;;
     4)
-      bash Command/installSingbox.sh || true
-      bash Command/confHy2.sh || echo "[ERROR] Hysteria2 config failed" 
-      bash Command/confSingbox.sh || echo "[ERROR] sing-box config failed" ;;
+      bash Command/installSingbox.sh && \
+      bash Command/confHy2.sh && \
+      bash Command/confSingbox.sh || echo "[ERROR] Hysteria2 deploy failed" ;;
     5)
-      bash Command/installSingbox.sh || true
-      bash Command/confVless.sh || echo "[ERROR] VLESS config failed" 
-      bash Command/confSingbox.sh || echo "[ERROR] sing-box config failed" ;;
+      bash Command/installSingbox.sh && \
+      bash Command/confVless.sh && \
+      bash Command/confSingbox.sh || echo "[ERROR] VLESS deploy failed" ;;
     6)
       echo "[ERROR] Reality setup is not available in this release." ;;
     7)

@@ -64,7 +64,7 @@ else
 
     echo "downloading..."
     DOWNLOAD_URL=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases/latest \
-    | jq -r ".assets[] | select(.name | test(\"linux-${FILE_ARCH}\\.tar\\.gz$\")) | .browser_download_url")
+    | jq -r ".assets[] | select(.name | test(\"linux-${FILE_ARCH}\\\\.tar\\\\.gz$\")) | .browser_download_url")
     if [ -z "$DOWNLOAD_URL" ]; then
         echo "failed to get download URL for sing-box"
         exit 1
