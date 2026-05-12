@@ -3,6 +3,9 @@ CONFIG_PATH="$CONFIG_DIR/config.json"
 HY2_PATH="$CONFIG_DIR/hysteria2/config.json"
 VLESS_PATH="$CONFIG_DIR/vless/config.json"
 SHARE_LINK_PATH="$CONFIG_DIR/share_link.txt"
+HY2_PORT_PATH="$CONFIG_DIR/hysteria2/port.txt"
+HY2_SHARE_LINK_PATH="$CONFIG_DIR/hysteria2/share_link.txt"
+VLESS_SHARE_LINK_PATH="$CONFIG_DIR/vless/share_link.txt"
 
 hy2_config=$(cat "$HY2_PATH" 2>/dev/null || true)
 vless_config=$(cat "$VLESS_PATH" 2>/dev/null || true)
@@ -51,3 +54,20 @@ EOF
     systemctl daemon-reload
 fi
 systemctl restart sing-box
+echo "[OK] sing-box restarted with $CONFIG_PATH"
+
+if [ -s "$HY2_PORT_PATH" ] && command -v ufw >/dev/null 2>&1 && ufw status | grep -q "Status: active"; then
+    hy2_port=$(cat "$HY2_PORT_PATH")
+    ufw allow "$hy2_port/udp"
+    echo "[OK] Allowed Hysteria2 UDP port $hy2_port in ufw."
+fi
+
+if [ -s "$HY2_SHARE_LINK_PATH" ]; then
+    echo "Hysteria2 share link:"
+    cat "$HY2_SHARE_LINK_PATH"
+fi
+
+if [ -s "$VLESS_SHARE_LINK_PATH" ]; then
+    echo "VLESS share link:"
+    cat "$VLESS_SHARE_LINK_PATH"
+fi

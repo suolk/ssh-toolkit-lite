@@ -17,7 +17,8 @@ getDomain() {
     # If domain exists, ask user if they want to keep it
     if [ -n "$domain" ]; then
         echo "Current domain: $domain"
-        read -r -p "Do you want to change the current domain? (y/n) " answer
+        echo "Do you want to change the current domain? (y/n) "
+        read -r -p " "answer
         if ! [[ "$answer" =~ ^[Nn]$ ]]; then
             domain=""
         fi
@@ -51,7 +52,8 @@ getNewPort(){
     done
     echo "Generated random port: $newPort"
     # Ask user if they want to change the random port
-    read -r -p "Do you want to change random port? (y/n) " answer
+    echo "Do you want to change the random port? (y/n) "
+    read -r -p " " answer
     if [[ "$answer" =~ ^[Yy]$ ]]; then
         while true; do
             read -r -p "Enter new port (1024-65535): " newPort
