@@ -11,22 +11,22 @@ HY2_SHARE_LINK_PATH="$CONFIG_DIR/hysteria2/share_link.txt"
 VLESS_SHARE_LINK_PATH="$CONFIG_DIR/vless/share_link.txt"
 REALITY_SHARE_LINK_PATH="$CONFIG_DIR/reality/share_link.txt"
 
-hy2_config=$(cat "$HY2_PATH" 2>/dev/null || true)
-vless_config=$(cat "$VLESS_PATH" 2>/dev/null || true)
-reality_config=$(cat "$REALITY_PATH" 2>/dev/null || true)
-
 inbounds_parts=()
-[ -n "$hy2_config" ]     && inbounds_parts+=("        $hy2_config")
-[ -n "$vless_config" ]   && inbounds_parts+=("        $vless_config")
-[ -n "$reality_config" ] && inbounds_parts+=("        $reality_config")
+[ -s "$HY2_PATH" ]     && inbounds_parts+=("        $(cat "$HY2_PATH")")
+[ -s "$VLESS_PATH" ]   && inbounds_parts+=("        $(cat "$VLESS_PATH")")
+[ -s "$REALITY_PATH" ] && inbounds_parts+=("        $(cat "$REALITY_PATH")")
 
 if [ ${#inbounds_parts[@]} -eq 0 ]; then
     echo "[ERROR] No inbound config found." >&2
     exit 1
 fi
 
-# Join with comma+newline
-inbounds_config=$(printf ',\n' "${inbounds_parts[@]}")
+# Join with comma+newline, no leading comma
+inbounds_config="${inbounds_parts[0]}"
+for ((i=1; i<${#inbounds_parts[@]}; i++)); do
+    inbounds_config="${inbounds_config},
+${inbounds_parts[$i]}"
+done
 cat > "$CONFIG_PATH" <<EOF
 {
   "log": {

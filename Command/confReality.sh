@@ -38,12 +38,7 @@ getDestDomain() {
     fi
 
     echo "Destination domain: $destDomain"
-    read -r -p "Server port for destination [443]: " destPort
-    destPort="${destPort:-443}"
-    if ! [[ "$destPort" =~ ^[0-9]+$ ]] || [ "$destPort" -lt 1 ] || [ "$destPort" -gt 65535 ]; then
-        echo "Invalid port, using 443." >&2
-        destPort=443
-    fi
+    destPort=443
 
     cat > "$CONFIG_DIR/dest.txt" <<EOF
 $destDomain
