@@ -7,7 +7,6 @@ DOMAIN_PATH="$CONFIG_DIR/domain.txt"
 PORT_PATH="$CONFIG_DIR/port.txt"
 SHARE_LINK_PATH="$CONFIG_DIR/share_link.txt"
 DEFAULT_ENCRYPT_DIR="/etc/encrypt"
-ALT_ENCRYPT_DIR="/etc/encryptR"
 
 validateDomainIp() {
     local domain="$1"
@@ -86,21 +85,10 @@ getDomain() {
     echo "$domain" > "$DOMAIN_PATH"
 
     bash Command/installCert.sh "$domain"
-    if [ ! -f "$DEFAULT_ENCRYPT_DIR/$domain/fullchain.pem" ] && [ ! -f "$ALT_ENCRYPT_DIR/$domain/fullchain.pem" ]; then
+    if [ ! -f "$DEFAULT_ENCRYPT_DIR/$domain/fullchain.pem" ]; then
         echo "Certificate generation failed!">&2
         exit 1
     fi
-}
-
-getCertDir() {
-    local domain="$1"
-
-    if [ -f "$ALT_ENCRYPT_DIR/$domain/fullchain.pem" ] && [ -f "$ALT_ENCRYPT_DIR/$domain/privkey.pem" ]; then
-        echo "$ALT_ENCRYPT_DIR"
-        return 0
-    fi
-
-    echo "$DEFAULT_ENCRYPT_DIR"
 }
 
 deployVless() {
@@ -109,33 +97,38 @@ deployVless() {
     local newPort
     newPort=$(cat "$PORT_PATH")
     local uuid
-    uuid=$(uuidgen)
-    local certDir
-    certDir=$(getCertDir "$domain")
-    local nodeName="${uuid%%-*}-VLESS_TCP/TLS_Vision"
+
+    # Use sing-box to generate uuid if available, fallback to uuidgen
+    if command -v sing-box >/dev/null 2>&1; then
+        uuid=$(sing-box generate uuid)
+    else
+        uuid=$(uuidgen)
+    fi
+
+    local sslDomain="$domain"
 
     cat > "$CONFIG_PATH" <<EOF
 {
-    "type": "vless",
-    "tag": "VLESSTCP",
-    "listen": "::",
-    "listen_port": $newPort,
-    "users": [
-        {
-            "uuid": "$uuid",
-            "flow": "xtls-rprx-vision",
-            "name": "$nodeName"
-        }
-    ],
-    "tls": {
-        "server_name": "$domain",
-        "enabled": true,
-        "certificate_path": "$certDir/$domain/fullchain.pem",
-        "key_path": "$certDir/$domain/privkey.pem"
+  "type": "vless",
+  "listen": "::",
+  "listen_port": $newPort,
+  "tag": "VLESSTCP",
+  "users": [
+    {
+      "uuid": "$uuid",
+      "flow": "xtls-rprx-vision",
+      "name": "${uuid%%-*}-VLESS_TCP/TLS_Vision"
     }
+  ],
+  "tls": {
+    "server_name": "$sslDomain",
+    "enabled": true,
+    "certificate_path": "$DEFAULT_ENCRYPT_DIR/$domain/fullchain.pem",
+    "key_path": "$DEFAULT_ENCRYPT_DIR/$domain/privkey.pem"
+  }
 }
 EOF
-    local shareLink="vless://$uuid@$domain:$newPort?encryption=none&security=tls&type=tcp&host=$domain&fp=chrome&headerType=none&sni=$domain&flow=xtls-rprx-vision#$nodeName"
+    local shareLink="vless://${uuid}@${domain}:${newPort}?encryption=none&security=tls&type=tcp&host=${domain}&fp=chrome&headerType=none&sni=${domain}&flow=xtls-rprx-vision#${uuid%%-*}-VLESS_TCP/TLS_Vision"
     echo "$shareLink" > "$SHARE_LINK_PATH"
 }
 
