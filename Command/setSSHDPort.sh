@@ -1,6 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
+UFW_INIT_FLAG="/var/lib/ssh-toolkit-lite/ufw-default-ports.initialized"
+
 echo "Checking for UFW (Uncomplicated Firewall)..."
 if command -v ufw >/dev/null 2>&1; then
     echo "UFW is already installed."
@@ -16,10 +18,16 @@ echo "Checking if UFW is active..."
 if ufw status | grep -q "^Status:active"; then
     echo "UFW is active."
 else
-    echo "Allowing default TCP ports 22, 80, and 443 before enabling UFW..."
-    sudo ufw allow 22/tcp
-    sudo ufw allow 80/tcp
-    sudo ufw allow 443/tcp
+    if [ ! -f "$UFW_INIT_FLAG" ]; then
+        echo "Allowing default TCP ports 22, 80, and 443 before first UFW enable..."
+        sudo ufw allow 22/tcp
+        sudo ufw allow 80/tcp
+        sudo ufw allow 443/tcp
+        sudo mkdir -p "$(dirname "$UFW_INIT_FLAG")"
+        sudo touch "$UFW_INIT_FLAG"
+    else
+        echo "UFW default ports were already initialized, skipping automatic 22/80/443 rules."
+    fi
 
     sudo ufw --force enable || {
         echo "Failed to enable UFW"
