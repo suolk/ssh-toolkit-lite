@@ -2,25 +2,31 @@ CONFIG_DIR="/etc/sing-box"
 CONFIG_PATH="$CONFIG_DIR/config.json"
 HY2_PATH="$CONFIG_DIR/hysteria2/config.json"
 VLESS_PATH="$CONFIG_DIR/vless/config.json"
+REALITY_PATH="$CONFIG_DIR/reality/config.json"
 SHARE_LINK_PATH="$CONFIG_DIR/share_link.txt"
 HY2_PORT_PATH="$CONFIG_DIR/hysteria2/port.txt"
 VLESS_PORT_PATH="$CONFIG_DIR/vless/port.txt"
+REALITY_PORT_PATH="$CONFIG_DIR/reality/port.txt"
 HY2_SHARE_LINK_PATH="$CONFIG_DIR/hysteria2/share_link.txt"
 VLESS_SHARE_LINK_PATH="$CONFIG_DIR/vless/share_link.txt"
+REALITY_SHARE_LINK_PATH="$CONFIG_DIR/reality/share_link.txt"
 
 hy2_config=$(cat "$HY2_PATH" 2>/dev/null || true)
 vless_config=$(cat "$VLESS_PATH" 2>/dev/null || true)
-if [ -n "$hy2_config" ] && [ -n "$vless_config" ]; then
-    inbounds_config="        $hy2_config,
-        $vless_config"
-elif [ -n "$hy2_config" ]; then
-    inbounds_config="        $hy2_config"
-elif [ -n "$vless_config" ]; then
-    inbounds_config="        $vless_config"
-else
+reality_config=$(cat "$REALITY_PATH" 2>/dev/null || true)
+
+inbounds_parts=()
+[ -n "$hy2_config" ]     && inbounds_parts+=("        $hy2_config")
+[ -n "$vless_config" ]   && inbounds_parts+=("        $vless_config")
+[ -n "$reality_config" ] && inbounds_parts+=("        $reality_config")
+
+if [ ${#inbounds_parts[@]} -eq 0 ]; then
     echo "[ERROR] No inbound config found." >&2
     exit 1
 fi
+
+# Join with comma+newline
+inbounds_config=$(printf ',\n' "${inbounds_parts[@]}")
 cat > "$CONFIG_PATH" <<EOF
 {
   "log": {
@@ -95,6 +101,20 @@ if [ -s "$VLESS_PORT_PATH" ]; then
     fi
 fi
 
+if [ -s "$REALITY_PORT_PATH" ]; then
+    reality_port=$(cat "$REALITY_PORT_PATH")
+    if command -v ufw >/dev/null 2>&1; then
+        if ufw status | grep -q "Status: active"; then
+            ufw allow "$reality_port/tcp"
+            echo "[OK] Allowed Reality TCP port $reality_port in ufw."
+        else
+            echo "[INFO] ufw is inactive, skipped local firewall rule for TCP port $reality_port."
+        fi
+    else
+        echo "[INFO] ufw is not installed, skipped local firewall rule for TCP port $reality_port."
+    fi
+fi
+
 if [ -s "$HY2_SHARE_LINK_PATH" ]; then
     echo "Hysteria2 share link:"
     cat "$HY2_SHARE_LINK_PATH"
@@ -103,4 +123,9 @@ fi
 if [ -s "$VLESS_SHARE_LINK_PATH" ]; then
     echo "VLESS share link:"
     cat "$VLESS_SHARE_LINK_PATH"
+fi
+
+if [ -s "$REALITY_SHARE_LINK_PATH" ]; then
+    echo "Reality share link:"
+    cat "$REALITY_SHARE_LINK_PATH"
 fi

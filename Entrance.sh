@@ -125,8 +125,9 @@ while true; do
   echo "3) Install sing-box"
   echo "4) Deploy sing-box + Hysteria2 (requires domain)"
   echo "5) Deploy sing-box + Vless (requires domain)"
-  echo "6) Deploy Vless + Reality (not available)"
-  echo "7) Exit"
+  echo "6) Deploy Vless + Reality "
+  echo "7) Uninstall sing-box"
+  echo "0) Exit"
   echo "=============================="
 
   read -r -p "Select option: " choice
@@ -146,8 +147,12 @@ while true; do
       bash Command/confVless.sh && \
       bash Command/confSingbox.sh || echo "[ERROR] VLESS deploy failed" ;;
     6)
-      echo "[ERROR] Reality setup is not available in this release." ;;
+      bash Command/installSingbox.sh && \
+      bash Command/confReality.sh && \
+      bash Command/confSingbox.sh || echo "[ERROR] Reality deploy failed" ;;
     7)
+      bash Command/uninstallSingbox.sh || echo "[ERROR] sing-box uninstall failed" ;;
+    0)
       exit 0 ;;
     *)
       echo "Invalid choice." ;;
