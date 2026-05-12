@@ -103,12 +103,13 @@ deployVless() {
 {
     "type": "vless",
     "tag": "vless-in",
-    "listen": "0.0.0.0",
+    "listen": "::",
     "listen_port": $newPort,
     "users": [
         {
             "uuid": "$uuid",
-            "flow": "xtls-rprx-vision"
+            "flow": "xtls-rprx-vision",
+            "name": "${uuid%%-*}-VLESS_TCP/TLS_Vision"
         }
     ],
     "tls": {

@@ -34,7 +34,15 @@ $inbounds_config
       "type": "direct",
       "tag": "direct"
     }
-  ]
+  ],
+  "route": {
+    "rules": [
+      {
+        "action": "sniff",
+        "timeout": "1s"
+      }
+    ]
+  }
 }
 EOF
 
