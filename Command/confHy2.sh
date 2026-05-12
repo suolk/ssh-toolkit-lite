@@ -8,6 +8,25 @@ PORT_PATH="$CONFIG_DIR/port.txt"
 SHARE_LINK_PATH="$CONFIG_DIR/share_link.txt"
 ENCRYPT_DIR="/etc/encrypt"
 
+validateDomainIp() {
+    local domain="$1"
+    local public_ip
+    local domain_ips
+
+    public_ip=$(curl -4 -fsS https://api.ipify.org || true)
+    if [ -z "$public_ip" ]; then
+        echo "[WARN] Could not detect public IPv4, skipped domain IP check."
+        return 0
+    fi
+
+    domain_ips=$(getent ahostsv4 "$domain" | awk '{print $1}' | sort -u)
+    if ! echo "$domain_ips" | grep -qx "$public_ip"; then
+        echo "[ERROR] Domain $domain does not resolve to this server IP ($public_ip)." >&2
+        echo "Resolved IPv4: ${domain_ips:-none}" >&2
+        return 1
+    fi
+}
+
 getDomain() {
     # Check if there is already a domain saved
     local domain=""
@@ -28,6 +47,8 @@ getDomain() {
         read -r -p "Enter your domain ( exmaple.com ): " domain
         if ! getent hosts "$domain" > /dev/null; then
             echo "Domain cannot be resolved">&2
+            domain=""
+        elif ! validateDomainIp "$domain"; then
             domain=""
         fi
     done
