@@ -12,6 +12,11 @@ else
         exit 1
     }
 fi
+echo "Allowing default TCP ports 22, 80, and 443..."
+sudo ufw allow 22/tcp
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+
 echo "Checking if UFW is active..."
 if ufw status | grep -q "^Status:active"; then
     echo "UFW is active."
