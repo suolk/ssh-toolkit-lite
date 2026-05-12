@@ -6,7 +6,8 @@ CONFIG_PATH="$CONFIG_DIR/config.json"
 DOMAIN_PATH="$CONFIG_DIR/domain.txt"
 PORT_PATH="$CONFIG_DIR/port.txt"
 SHARE_LINK_PATH="$CONFIG_DIR/share_link.txt"
-ENCRYPT_DIR="/etc/encrypt"
+DEFAULT_ENCRYPT_DIR="/etc/encrypt"
+ALT_ENCRYPT_DIR="/etc/encryptR"
 
 validateDomainIp() {
     local domain="$1"
@@ -85,10 +86,21 @@ getDomain() {
     echo "$domain" > "$DOMAIN_PATH"
 
     bash Command/installCert.sh "$domain"
-    if [ ! -f "$ENCRYPT_DIR/$domain/fullchain.pem" ]; then
+    if [ ! -f "$DEFAULT_ENCRYPT_DIR/$domain/fullchain.pem" ] && [ ! -f "$ALT_ENCRYPT_DIR/$domain/fullchain.pem" ]; then
         echo "Certificate generation failed!">&2
         exit 1
     fi
+}
+
+getCertDir() {
+    local domain="$1"
+
+    if [ -f "$ALT_ENCRYPT_DIR/$domain/fullchain.pem" ] && [ -f "$ALT_ENCRYPT_DIR/$domain/privkey.pem" ]; then
+        echo "$ALT_ENCRYPT_DIR"
+        return 0
+    fi
+
+    echo "$DEFAULT_ENCRYPT_DIR"
 }
 
 deployVless() {
@@ -98,29 +110,32 @@ deployVless() {
     newPort=$(cat "$PORT_PATH")
     local uuid
     uuid=$(uuidgen)
+    local certDir
+    certDir=$(getCertDir "$domain")
+    local nodeName="${uuid%%-*}-VLESS_TCP/TLS_Vision"
 
     cat > "$CONFIG_PATH" <<EOF
 {
     "type": "vless",
-    "tag": "vless-in",
+    "tag": "VLESSTCP",
     "listen": "::",
     "listen_port": $newPort,
     "users": [
         {
             "uuid": "$uuid",
             "flow": "xtls-rprx-vision",
-            "name": "${uuid%%-*}-VLESS_TCP/TLS_Vision"
+            "name": "$nodeName"
         }
     ],
     "tls": {
-        "enabled": true,
         "server_name": "$domain",
-        "certificate_path": "$ENCRYPT_DIR/$domain/fullchain.pem",
-        "key_path": "$ENCRYPT_DIR/$domain/privkey.pem"
+        "enabled": true,
+        "certificate_path": "$certDir/$domain/fullchain.pem",
+        "key_path": "$certDir/$domain/privkey.pem"
     }
 }
 EOF
-    local shareLink="vless://$uuid@$domain:$newPort?encryption=none&flow=xtls-rprx-vision&security=tls&sni=$domain&fp=chrome&insecure=0&allowInsecure=0&type=tcp&headerType=none&host=$domain#VLESS-Vision"
+    local shareLink="vless://$uuid@$domain:$newPort?encryption=none&security=tls&type=tcp&host=$domain&fp=chrome&headerType=none&sni=$domain&flow=xtls-rprx-vision#$nodeName"
     echo "$shareLink" > "$SHARE_LINK_PATH"
 }
 
